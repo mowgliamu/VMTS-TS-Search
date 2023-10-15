@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/env python
+"""
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 import re
 import os
@@ -36,7 +40,7 @@ def get_x_to_q_transformation_matrix(param_list, write_to_file):
 
     '''
     Transformation matrices for X -> Q and Q -> X transformation.
-    Simple, straightforward. No Eckart business here. 
+    Simple, straightforward. No Eckart business here.
 
     natom:	param_list[0]
     amass:	param_list[1]
@@ -66,7 +70,7 @@ def get_x_to_q_transformation_matrix(param_list, write_to_file):
     ref_freq	=	param_list[4]
     L_ref_mat	=	param_list[5]
 
-    # Get the matrix of atomic masses 
+    # Get the matrix of atomic masses
     mass_matrix = np.diag(np.repeat(amass, 3))
     mass_matrix_sqrt = np.diag(np.repeat(np.sqrt(amass), 3))
     mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(amass), 3))
@@ -89,7 +93,7 @@ def get_x_to_q_transformation_matrix(param_list, write_to_file):
     # 3. The Transformation Matrix : D~ [MCTDH Notation] (3N - 3, 3N)
     Qdmfs = np.zeros(np.shape(L_ref_mat)).T
     for alpha in range(nmode):
-	for i in range(natom):	
+	for i in range(natom):
 	    for j in range(3):
 		k = 3*i + j
 		Qdmfs[alpha][k] = (fred*np.sqrt(ref_freq[alpha])*np.sqrt(amass[i]))*L_ref_mat.T[alpha][k]
@@ -97,7 +101,7 @@ def get_x_to_q_transformation_matrix(param_list, write_to_file):
     # 4. The Transformation Matrix: D~' [MCTDH Notation] (3N, 3N - 3)
     Xdmfs = np.zeros(np.shape(L_ref_mat))
     for alpha in range(nmode):
-	for i in range(natom):	
+	for i in range(natom):
 	    for j in range(3):
 		k = 3*i + j
 		Xdmfs[k][alpha] = L_ref_mat[k][alpha]/(fred*np.sqrt(ref_freq[alpha])*np.sqrt(amass[i]))
@@ -165,7 +169,7 @@ def get_x_to_q_transformation_matrix(param_list, write_to_file):
 	gwrite.write("{:20.8f}".format(ref_freq[i]))
     gwrite.write('\n')
     gwrite.write('\n')
-     
+
     gwrite.close()
 
     #  Finally Return

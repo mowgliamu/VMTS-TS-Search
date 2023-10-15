@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/env python
+"""
+A program to drive calculation for ts search using VIBRON.
 
-# A program to drive calculation for ts search using VIBRON.
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 import re
 import os
@@ -47,7 +51,7 @@ sys.stdout = os.fdopen(fd, 'w', 0)
 
 #5. If not converged, launch a (single point) Gaussian calculation at this
 #   new geometry - get new Energy and Gradeint [Hessian, if asked for].
-#   [You should launch a Gaussian calculation anyway for step 4 - to check 
+#   [You should launch a Gaussian calculation anyway for step 4 - to check
 #    convergence]
 
 #6. Go to Step #2 - minima information does not change, only TS gets updated.
@@ -86,7 +90,7 @@ def create_starting_guess_ts(reactant, product):
 
 	# Read formchk
 	natom, anums, masses, X_ts_guess, evals, fcm = read_fchk_gaussian('ts_guess.fchk')
-	
+
     else:
 	print
 	print 'Generating first ts guess as XA + XB / 2'
@@ -94,10 +98,10 @@ def create_starting_guess_ts(reactant, product):
 
 	# Reactant data
 	natom, anums, masses, X_A, evals, force_constant_matrix = read_fchk_gaussian(reactant)
-	
+
 	# Product data
 	natom, anums, masses, X_B, evals, force_constant_matrix = read_fchk_gaussian(product)
-	
+
 	# Rotate X_B wrt X_A
 	print 'Align Minima-B with Minima-A to calculate XA + XB / 2'
 	eck, B = eckart_rotation_general(natom, masses, X_B, X_A)
@@ -128,7 +132,7 @@ def create_starting_guess_ts(reactant, product):
 	    current_geometry[2] = str(X_ts_guess[i, 1])
 	    current_geometry[3] = str(X_ts_guess[i, 2])
 	    h[i+6] = "  ".join(current_geometry)+"\n"
-	
+
 	hwrite = open('ts_guess.com', 'w')
 	hwrite.writelines(h)
 	hwrite.close()
@@ -153,7 +157,7 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 
     print
     print 'Working on Vibronic Model Optimization...'
-    print 
+    print
     print '@call_construction_of_vibronic_model: hessian_update =', hessian_update_index
     print
 
@@ -178,7 +182,7 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
     print
     print 'Vibronic Model Optimization Completed Successfully!'
     print 'Will launch a VIBRON calculation.'
-    print 
+    print
 
     # Remove Vibron_TS_info, if present
     if os.path.isfile('Vibron_TS_info'):
@@ -194,11 +198,11 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 
     print
     print 'VIBRON done. Will read output data.'
-    print 
+    print
 
     # Read output from VIBRON, do whatever transformations are needed
     # a) from normal modes to cartesian b) put it in it's own Eckart frame
-    
+
     # Remove Vibron_TS_info, if present
     if os.path.isfile('Vibron_TS_info'):
         fread = open('Vibron_TS_info', 'r')
@@ -214,18 +218,18 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 	    coord_index = f.index(line)
 	else:
 	    pass
-    
+
     nmode = int(f[coord_index+1].strip().split()[0])
     q_ts_current = np.zeros(nmode)
     for i in range(nmode):
 	q_ts_current[i] = float(f[i+2+coord_index].strip().split()[0])
-	
+
 
     # =======================================
     # NORMAL MODE TO CARTESIAN TRANSFORMATION
     # =======================================
 
-    g = open('transform_cartesian_normal').readlines() 
+    g = open('transform_cartesian_normal').readlines()
     natom = int(g[0].strip().split()[0])
     amass = np.array([float(k) for k in g[1].strip().split()])
 
@@ -235,10 +239,10 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 	    ref_geom_index = g.index(line)
 	else:
 	    pass
-	    
-    ref_cart = np.zeros((natom, 3))  
+
+    ref_cart = np.zeros((natom, 3))
     for i in range(natom):
-	ref_cart[i:,] = np.array([float(k) for k in g[i+1+ref_geom_index].strip().split()]) 
+	ref_cart[i:,] = np.array([float(k) for k in g[i+1+ref_geom_index].strip().split()])
 
 
     # Reference Normal Modes
@@ -247,10 +251,10 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 	    ref_modes_index = g.index(line)
 	else:
 	    pass
-	    
-    L_ref_mat = np.zeros((3*natom, nmode))  
+
+    L_ref_mat = np.zeros((3*natom, nmode))
     for i in range(3*natom):
-	L_ref_mat[i:,] = np.array([float(k) for k in g[i+1+ref_modes_index].strip().split()]) 
+	L_ref_mat[i:,] = np.array([float(k) for k in g[i+1+ref_modes_index].strip().split()])
 
 
     # Reference Frequencies
@@ -259,9 +263,9 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 	    ref_freq_index = g.index(line)
 	else:
 	    pass
-	    
-    ref_freq = np.zeros(nmode)  
-    ref_freq = np.array([float(k) for k in g[1+ref_freq_index].strip().split()]) 
+
+    ref_freq = np.zeros(nmode)
+    ref_freq = np.array([float(k) for k in g[1+ref_freq_index].strip().split()])
 
 
     #---------------------------------------
@@ -270,7 +274,7 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 
     X_to_Q = np.zeros(np.shape(L_ref_mat)).T
     for alpha in range(nmode):
-	for i in range(natom):	
+	for i in range(natom):
 	    for j in range(3):
 		k = 3*i + j
 		if dimensionless:
@@ -280,7 +284,7 @@ def call_construction_of_vibronic_model(cycle, hessian_update_index):
 
     Q_to_X = np.zeros(np.shape(L_ref_mat))
     for alpha in range(nmode):
-	for i in range(natom):	
+	for i in range(natom):
 	    for j in range(3):
 		k = 3*i + j
 		if dimensionless:
@@ -300,7 +304,7 @@ def launch_energy_gradient_calculation(x_ts_current):
     '''
     Force Constant Matrix (FCM) will NOT be calculated.
     '''
-    
+
     global natom
 
     # Update geometry using Blurb
@@ -311,7 +315,7 @@ def launch_energy_gradient_calculation(x_ts_current):
 	current_geometry[2] = str(x_ts_current[i, 1])
 	current_geometry[3] = str(x_ts_current[i, 2])
 	h[i+6] = "  ".join(current_geometry)+"\n"
-    
+
     # Write file for large calc ("freq" excluded, "force" included)
     h[1] = '# force ' + full_gradient +' symmetry=com units=au\n'
     hwrite = open('ts_guess.com', 'w')
@@ -338,7 +342,7 @@ def launch_full_hessian_calculation(hessian_level, x_ts_current):
     '''
     A Gaussian calculation returning full FCM, in addition to E/g.
     '''
-    
+
     global natom
 
     # Update geometry using Blurb
@@ -349,7 +353,7 @@ def launch_full_hessian_calculation(hessian_level, x_ts_current):
 	current_geometry[2] = str(x_ts_current[i, 1])
 	current_geometry[3] = str(x_ts_current[i, 2])
 	h[i+6] = "  ".join(current_geometry)+"\n"
-    
+
     # Write file for large calc ("freq" included))
     h[1] = '# freq ' + hessian_level +' symmetry=com units=au\n'
     hwrite = open('ts_guess.com', 'w')
@@ -376,7 +380,7 @@ def launch_full_hessian_lower_calculation(hessian_level, x_ts_current):
     '''
     A Gaussian calculation returning full FCM, in addition to E/g.
     '''
-    
+
     global natom
 
     # Update geometry using Blurb
@@ -387,7 +391,7 @@ def launch_full_hessian_lower_calculation(hessian_level, x_ts_current):
 	current_geometry[2] = str(x_ts_current[i, 1])
 	current_geometry[3] = str(x_ts_current[i, 2])
 	h[i+6] = "  ".join(current_geometry)+"\n"
-    
+
     # Write file for large calc ("freq" included))
     # Write file for small calc ("freq" included)
     h[0] = h[0].replace('ts_guess', 'ts_hess_calc_1')
@@ -435,7 +439,7 @@ def vibronic_model_hessian_update_scheme(natom, x_ts_current):
 	    coord_index = f.index(line)
 	else:
 	    pass
-    
+
     nmode = int(f[coord_index+1].strip().split()[0])
     force_constant_matrix = np.zeros((nmode, nmode))
     for line in f:
@@ -443,12 +447,12 @@ def vibronic_model_hessian_update_scheme(natom, x_ts_current):
 	    hess_index = f.index(line)
 	else:
 	    pass
-	    
+
     hess_cols   = int(f[hess_index+1].strip().split()[2])
     hess_blocks = int(math.ceil(float(nmode)/float(hess_cols)))
 
     last_block  = nmode % hess_cols
-    
+
     m = 0
     start_index = hess_index + 2
     for r in range(hess_blocks):
@@ -470,15 +474,15 @@ def vibronic_model_hessian_update_scheme(natom, x_ts_current):
 def bofill_hessian_update_scheme(natom, x_ts_current, data_previous):
 
     '''
-    A different hessian update procedure. 
+    A different hessian update procedure.
     '''
 
     # Energy and Gradient
     anums, masses, E0, evals, foo = launch_energy_gradient_calculation(x_ts_current)
 
-    # ===================    
+    # ===================
     # HESSIAN CALCULATION
-    # ===================    
+    # ===================
 
     # Old Data
     x_old = data_previous[0]
@@ -500,7 +504,7 @@ def bofill_hessian_update_scheme(natom, x_ts_current, data_previous):
     # SR1 Update
     update_SR1 = np.outer(g_Hx, g_Hx.T)/np.dot(g_Hx.T, delta_x)
 
-    print 
+    print
     print 'Check if SR1 Hessian is Symmetric'
     print np.allclose(update_SR1, update_SR1.T, atol=1e-8)
     print
@@ -511,7 +515,7 @@ def bofill_hessian_update_scheme(natom, x_ts_current, data_previous):
     update_psb_term_2 = (np.dot(delta_x.T, g_Hx))*(np.outer(delta_x, delta_x.T))/((np.dot(delta_x.T, delta_x))**2.0)
     update_PSB	  = update_psb_term_1 - update_psb_term_2
 
-    print 
+    print
     print 'Check if PSB Hessian is Symmetric'
     print np.allclose(update_PSB, update_PSB.T, atol=1e-8)
     print
@@ -521,7 +525,7 @@ def bofill_hessian_update_scheme(natom, x_ts_current, data_previous):
     update_bfgs_term_2 = np.outer(np.dot(h_old, delta_x), np.dot(delta_x.T, h_old))/np.dot(delta_x.T, np.dot(h_old, delta_x))
     update_bfgs 	   = update_bfgs_term_1 - update_bfgs_term_2
 
-    print 
+    print
     print 'Check if BFGS Hessian is Symmetric'
     print np.allclose(update_bfgs, update_bfgs.T, atol=1e-8)
     print
@@ -529,7 +533,7 @@ def bofill_hessian_update_scheme(natom, x_ts_current, data_previous):
     # Bofill Update
     bofill_hessian_update = phi*update_SR1 + (1 - phi)*update_PSB
 
-    print 
+    print
     print 'Check if Bofill Hessian is Symmetric'
     print np.allclose(bofill_hessian_update, bofill_hessian_update.T, atol=1e-8)
     print
@@ -666,7 +670,7 @@ print
 print 'Entering LARGE branch. Finding TS at the (desired) higher level of theory'
 print
 
-# Get initial ab initio data at the starting geometry 
+# Get initial ab initio data at the starting geometry
 # (At the geometry obtained by pre-optimization process)
 if full_gradient == full_hessian:
     anum, amass, new_ener, new_grad, new_fcm 	= launch_full_hessian_calculation(full_hessian, new_cart)
@@ -723,7 +727,7 @@ for i in range(max_iter_large):
 
     # But check if difference in geometry is greater than threshold.
     # If YES, well, launch full hessian calculation again. If NOT, use update.
-    
+
     if np.any(abs(new_geom) - abs(previous_geom)) > geometry_threshold:
 	print
 	print 'Difference in geometry between two consecutive cycles is too large.'
@@ -790,7 +794,7 @@ for i in range(max_iter_large):
     else:
 	print hval*au_to_ev
     print
-    
+
     # For Bofill Update, check if hessian has more than one negative eigenvalue
     # If yes, exit with an error message [OR WARNING]
     if hessian_update == 5:
@@ -896,7 +900,7 @@ if flag_convergence and check_convergence:
     # FINAL PROCESSING OF RESULTS
     # ===========================
 
-    # Get the matrix of atomic masses 
+    # Get the matrix of atomic masses
     mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(amass), 3))
 
     # Mass-weight the force constant matrix
@@ -954,6 +958,6 @@ else:
 
 print
 print 'Automated TS search using MAD-PES completed successfully.'
-print 
+print
 
 os.chdir('../')

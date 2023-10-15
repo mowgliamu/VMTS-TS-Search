@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/env python
+"""
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 import re
 import os
@@ -44,12 +48,12 @@ class Molecule(object):
     Abstraction of a molecule, primarily based on the cartesian geometry and hessian.
     Associated methods will perform the harmonic vibrational analysis and the rigid
     rotor rotational analysis. Appropriate coordinate transformations will be perfomed.
-    
+
     =========================== ================================================
     Attribute                   Description
     =========================== ================================================
-    `natom`              	Number of atoms 
-    `amass`			An array of atomic masses 
+    `natom`              	Number of atoms
+    `amass`			An array of atomic masses
     `eq_geom_cart`		Molecular geometry in cartesian coordinates
     `force_constant_matrix`	Force Constant Matrix in cartesian coordinates
     ----------------------------------------------------------------------------
@@ -72,8 +76,8 @@ class Molecule(object):
     `EckartMatrix`		Eckart Rotation Matrix for a given reference geometry
     `Duschinsky`		Duschinsky rotation matrix for a given reference geometry
     `Displacement`		Displacement vector for a given reference geometry
-    =========================== ================================================    
-    
+    =========================== ================================================
+
     ----------
     ACES NOTES:
     ----------
@@ -81,7 +85,7 @@ class Molecule(object):
     Normal Coordinate Matrix from the file NORMAL_FDIF are in CARTESIAN coordinates.
     """
 
-    fred  = 0.091135 		# The infamous fred! Conversion factor for DMNC 
+    fred  = 0.091135 		# The infamous fred! Conversion factor for DMNC
 
     def __init__(self, natom, amass, eq_geom_cart, force_constant_matrix):
 
@@ -97,7 +101,7 @@ class Molecule(object):
 	self.zpe      = None
 	self.hessian  = None
 	self.frequencies  = None
-	
+
 	self.PointGroup = None
 	self.RotationalConstants = None
 
@@ -109,7 +113,7 @@ class Molecule(object):
 	self.EckartMatrix = None
 	self.Duschinsky   = None
 	self.Displacement = None
-	
+
 	# What about linear molecules?
 	if project_translation and project_rotation:
 	    self.nmode = 3*self.natom - 6
@@ -127,7 +131,7 @@ class Molecule(object):
 	'''
 	Mass-weighted Cartesian coordinates
 	'''
-	
+
 	mwcart = np.zeros((self.natom, 3))
 
 	for i in range(self.natom):
@@ -147,7 +151,7 @@ class Molecule(object):
 	'''
 
 	return self.mwcart.flatten()
-	
+
 
     def get_centre_of_mass_mwc(self):
 
@@ -184,7 +188,7 @@ class Molecule(object):
 	    Inertia_Tensor[0][1] += self.mwcart[i][0]*self.mwcart[i][1]
 	    Inertia_Tensor[0][2] += self.mwcart[i][0]*self.mwcart[i][2]
 	    Inertia_Tensor[1][2] += self.mwcart[i][1]*self.mwcart[i][2]
-    
+
 	Inertia_Tensor[1][0] = Inertia_Tensor[0][1]
 	Inertia_Tensor[2][0] = Inertia_Tensor[0][2]
 	Inertia_Tensor[2][1] = Inertia_Tensor[1][2]
@@ -207,9 +211,9 @@ class Molecule(object):
 
 	# Check if CM at origin, and Inertia_Tensor Diagonal. If yes: exit
 	# If no: translate CM to origin, diagonalize IT, and rotate coordinates
-    
+
 	tolerance = 1e-5
-	
+
 	print
 	print 'eq_geom_cart: before com frame'
 	pprint(self.eq_geom_cart)
@@ -218,7 +222,7 @@ class Molecule(object):
 	# Always put COM at origin (even if it already is, does not hurt)
 	#for i in range(self.natom):
 	#    self.eq_geom_cart[i:,] = self.eq_geom_cart[i:,] - self.com
-	
+
 	self.eq_geom_cart = self.eq_geom_cart - self.com.T
 
 	print
@@ -263,10 +267,10 @@ class Molecule(object):
 	- project out translations and/or rotations as requested
 	- mass-weight force constant matrix, diagonalize (omega, L)
 	- get frequencies in cm-1 (sqrt(omega)*5140.48)
-	
+
 	'''
-	
-	# Get the matrix of atomic masses 
+
+	# Get the matrix of atomic masses
 	mass_matrix = np.diag(np.repeat(self.amass, 3))
 	mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(self.amass), 3))
 
@@ -334,7 +338,7 @@ class Molecule(object):
 	    pass
 
 	Ival, Ivec = np.linalg.eigh(self.moi)
-	
+
 	if verbose:
 	    print
 	    print '@harmonic_vibrational_analysis: Diagonalize MOI; check Ival, Ivec'
@@ -346,7 +350,7 @@ class Molecule(object):
 
 	# 2. Construct Pmat
 	Pmat = np.dot(xyzcom, Ivec)
-	
+
 	# 3. Construct Rotational Normal Coordinates
 	for i in range(self.natom):
 	    for j in range(3):
@@ -379,7 +383,7 @@ class Molecule(object):
 
 	# Mass-weight the force constant matrix
 	mw_fcm = np.dot(mass_matrix_sqrt_div, np.dot(self.force_constant_matrix, mass_matrix_sqrt_div))
-	
+
 	# Diagonalize (Eigenvalues are sorted)
 	hval, hvec = np.linalg.eigh(mw_fcm)
 
@@ -469,10 +473,10 @@ class Molecule(object):
 	- explicitly project out translation and get 3N-3 normal modes using lowdin orthogonalization
 	- get frequencies in cm-1 (sqrt(omega)*5140.48)
 	- get dimensionless normal coordinates (using fred!)
-	
+
 	'''
-	
-	# Get the matrix of atomic masses 
+
+	# Get the matrix of atomic masses
 	mass_matrix = np.diag(np.repeat(self.amass, 3))
 	mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(self.amass), 3))
 
@@ -540,7 +544,7 @@ class Molecule(object):
 	    pass
 
 	Ival, Ivec = np.linalg.eigh(self.moi)
-	
+
 	if verbose:
 	    print
 	    print '@harmonic_vibrational_analysis: Diagonalize MOI; check Ival, Ivec'
@@ -552,7 +556,7 @@ class Molecule(object):
 
 	# 2. Construct Pmat
 	Pmat = np.dot(xyzcom, Ivec)
-	
+
 	# 3. Construct Rotational Normal Coordinates
 	for i in range(self.natom):
 	    for j in range(3):
@@ -602,7 +606,7 @@ class Molecule(object):
 	    print 'Separation of Translation and Rotation not requested'
 	    print 'Make sure if this is what you want. Will return Full Hessian'
 	    q = np.zeros((3*self.natom, 6), dtype=float)
-	
+
 	if verbose:
 	    print
 	    print '@harmonic_vibrational_analysis: Translation-Rotation Eigenvectors after QR Decomposition'
@@ -624,24 +628,24 @@ class Molecule(object):
 	# Projection Operator: Q * Q.T
 	qqp = np.dot(q, q.T)
 	#qqp = np.dot(LTR, LTR.T)
-	
+
 	# Mass-weight the force constant matrix
 	mw_fcm = np.dot(mass_matrix_sqrt_div, np.dot(self.force_constant_matrix, mass_matrix_sqrt_div))
-	
+
 	# Diagonalize (Eigenvalues are sorted)
 	hval, hvec = np.linalg.eigh(mw_fcm)
 
 	# Project the force constant matrix (1 - P)*H*(1 - P)
 	proj_hessian =  np.dot(Imat - qqp, np.dot(mw_fcm, Imat - qqp))
-	
+
 	# Diagonalize (Eigenvalues are sorted)
 	phval, phvec = np.linalg.eigh(proj_hessian)
-	
-	print 
+
+	print
 	print '@harmonic_vibrational_analysis: hval (before projection)'
 	print hval
 	print
-	
+
 	print
 	print '@harmonic_vibrational_analysis: All eigenvalues of FCM before Projection'
 	print np.sqrt(abs(hval))*hfreq_cm
@@ -716,11 +720,11 @@ class Molecule(object):
 	hval = np.diag(hess_V)
 	vib_freq_cm = np.sqrt(abs(hval))*hfreq_cm
 
-	print 
+	print
 	print '@harmonic_vibrational_analysis: hval (after projection)'
 	print hval
 	print
-	
+
 	print
 	print '@get_normal_coordinates: All eigenvalues of FCM after Projection'
 	print vib_freq_cm
@@ -759,17 +763,17 @@ class Molecule(object):
 	Transformation between Cartesian and Normal Coordinates
 	'''
 
-	# Get the matrix of atomic masses 
+	# Get the matrix of atomic masses
 	mass_matrix = np.diag(np.repeat(self.amass, 3))
 	mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(self.amass), 3))
-       
+
 	# Transform
 	cart_from_mwnc = np.dot(mass_matrix_sqrt_div, np.dot(self.Lmwc, inp_mwnc)) + ref_cart.flatten()
 
 	# Reshape
 	cart_from_mwnc = np.reshape(cart_from_mwnc, (self.natom, 3))
 
-	return cart_from_mwnc	
+	return cart_from_mwnc
 
 
     def get_dimensionless_normal_coordinates(self, inp_cart, ref_cart):
@@ -780,19 +784,19 @@ class Molecule(object):
 
 	# The Transformation Matrix : D~ [MCTDH Notation] (3N - 3, 3N)
 	xdmfs = np.zeros(np.shape(self.Lmwc)).T
-	
+
 	for alpha in range(self.nmode):
-	    for i in range(self.natom):	
+	    for i in range(self.natom):
 		for j in range(3):
 		    k = 3*i + j
 		    xdmfs[alpha][k] = (fred*np.sqrt(self.frequencies[alpha])*np.sqrt(self.amass[i]))*self.Lmwc.T[alpha][k]
 
 	# X - X0
 	relative_cartesian = inp_cart.flatten() - ref_cart.flatten()
-	
+
 	# Q = D~ * (X - X0)
 	Q = np.dot(xdmfs, relative_cartesian)
-    
+
 	return Q, xdmfs
 
 
@@ -804,9 +808,9 @@ class Molecule(object):
 
 	# The Transformation Matrix: D~' [MCTDH Notation] (3N, 3N - 3)
 	xdmfs = np.zeros(np.shape(self.Lmwc))
-	
+
 	for alpha in range(self.nmode):
-	    for i in range(self.natom):	
+	    for i in range(self.natom):
 		for j in range(3):
 		    k = 3*i + j
 		    xdmfs[k][alpha] = self.Lmwc[k][alpha]/(fred*np.sqrt(self.hessian[alpha][alpha])*np.sqrt(self.amass[i]))
@@ -833,19 +837,19 @@ class Molecule(object):
 	self:	target state
 	other:	reference state
 	'''
-	
+
 	C_matrix = np.zeros((3,3))
 
 	for i in range(self.natom):
-	    C_matrix[0][0] += other.mwcart[i][0]*self.mwcart[i][0]	
-	    C_matrix[0][1] += other.mwcart[i][0]*self.mwcart[i][1]	
-	    C_matrix[0][2] += other.mwcart[i][0]*self.mwcart[i][2]	
-	    C_matrix[1][0] += other.mwcart[i][1]*self.mwcart[i][0]	
-	    C_matrix[1][1] += other.mwcart[i][1]*self.mwcart[i][1]	
-	    C_matrix[1][2] += other.mwcart[i][1]*self.mwcart[i][2]	
-	    C_matrix[2][0] += other.mwcart[i][2]*self.mwcart[i][0]	
-	    C_matrix[2][1] += other.mwcart[i][2]*self.mwcart[i][1]	
-	    C_matrix[2][2] += other.mwcart[i][2]*self.mwcart[i][2]	
+	    C_matrix[0][0] += other.mwcart[i][0]*self.mwcart[i][0]
+	    C_matrix[0][1] += other.mwcart[i][0]*self.mwcart[i][1]
+	    C_matrix[0][2] += other.mwcart[i][0]*self.mwcart[i][2]
+	    C_matrix[1][0] += other.mwcart[i][1]*self.mwcart[i][0]
+	    C_matrix[1][1] += other.mwcart[i][1]*self.mwcart[i][1]
+	    C_matrix[1][2] += other.mwcart[i][1]*self.mwcart[i][2]
+	    C_matrix[2][0] += other.mwcart[i][2]*self.mwcart[i][0]
+	    C_matrix[2][1] += other.mwcart[i][2]*self.mwcart[i][1]
+	    C_matrix[2][2] += other.mwcart[i][2]*self.mwcart[i][2]
 
 	print
 	print 'A matrix of Dymarsky and Kudin'
@@ -881,7 +885,7 @@ class Molecule(object):
 	print 'The S matrix of Dymarksy and Kudin'
 	print S_mat
 	print
-		    
+
 	print
 	print 'Determinant of T rotation matrix, should be +1.0'
 	print np.linalg.det(T_mat)
@@ -899,16 +903,16 @@ class Molecule(object):
 	K = L_initial.T * M^(-1/2) * ECKART_ROTATION * (cart_final - cart_initial)
 	'''
 
-	# Get the matrix of atomic masses 
+	# Get the matrix of atomic masses
 	mass_matrix = np.diag(np.repeat(self.amass, 3))
 	mass_matrix_sqrt = np.diag(np.repeat(np.sqrt(self.amass), 3))
-	
+
 	# Cartesian Displacement
 	displacement = self.eq_geom_cart.flatten() - other.eq_geom_cart.flatten()
 
 	# Duschinsky matrix
 	J_dus = np.dot(self.Lmwc.T, np.dot(eckart_b_matrix.T, other.Lmwc))
-	
+
 	# Displacement vector
 	right_product = np.dot(eckart_b_matrix, self.eq_geom_cart.flatten()) - other.eq_geom_cart.flatten()
 	left_product  = np.dot(other.Lmwc.T, mass_matrix_sqrt)
@@ -916,13 +920,13 @@ class Molecule(object):
 
 	return J_dus, K_dis
 
-    
+
     def get_transformed_abinitio_data(self, other, dus_mat, dis_vec):
 
 	'''
 	q_Ar   = J_A * q_A + K_A
-	E_Ar   = E_A - g_Ar.T 
-	g_Ar.T = g_A.T * {J_A}^-1 
+	E_Ar   = E_A - g_Ar.T
+	g_Ar.T = g_A.T * {J_A}^-1
 	H_Ar   = {J_A.T}^-1 * H_A * {J_A}^-1
 	'''
 
@@ -931,7 +935,7 @@ class Molecule(object):
 	# ===========================
 
 	E_Ar  = self.energy
-	g_Ar  = np.dot(dus_mat, self.gradient)	
+	g_Ar  = np.dot(dus_mat, self.gradient)
 	H_Ar  = np.dot(dus_mat.T, np.dot(self.hessian, dus_mat))
 
 	print
@@ -945,10 +949,10 @@ class Molecule(object):
 	print
 
 	if dimensionless:
-	    
+
 	    # Dimensionless coordinate of minima in its own system (always zero!)
 	    Q_A, D_A  = self.get_dimensionless_normal_coordinates(self.eq_geom_cart, self.eq_geom_cart)
-	    
+
 	    # Displacement vector in reduced dimensionless coordinates (from MWNC) [Scaled as fred*sqrt(omega)]
 	    dis_Q = np.zeros(nmode)
 	    for i in range(nmode):
@@ -969,7 +973,7 @@ class Molecule(object):
 		    hessian_dimless[i][j] = (1.0/(fred*(np.sqrt(other.frequencies[i]))))*(H_Ar[i][j])*(1.0/(fred*(np.sqrt(other.frequencies[j]))))
 
 	    return q_Ar, E_Ar, gradient_dimless, hessian_dimless
-	    
+
 	else:
 
 	    # Normal coordinate self (always zero)
@@ -977,7 +981,7 @@ class Molecule(object):
 
 	    # New minima position (normal coordinate)
 	    q_Ar  = np.dot(dus_mat, Q_A) + dis_vec
-	
+
 	    return q_Ar, E_Ar, g_Ar, H_Ar
 
 
@@ -989,7 +993,7 @@ class Potential(object):
     """
     A multi-dimensional Quadratic Potential which is a smooth
     function of nulcear coordinates (Taylor series expansion).
-    
+
     V(q) = E' + g'.T * (q - q') + 1/2 * (q - q').T * H' (q - q')
 
     =========================== ===============================================================
@@ -999,8 +1003,8 @@ class Potential(object):
     `energy`                    Electronic energy at the reference geometry 	       (scalar)
     `gradient`             	Gradient vector at the reference geometry 	       (vector)
     `hessian`         		Hessian matrix at the reference geometry	       (matrix)
-    =========================== ===============================================================    
-    
+    =========================== ===============================================================
+
     """
 
     def __init__(self, position, energy, gradient, hessian):
@@ -1016,7 +1020,7 @@ class Potential(object):
         return self.position
 
     def getEnergy(self):
-        ''' Returns vertical excitation energy''' 
+        ''' Returns vertical excitation energy'''
 
         return self.energy
 
@@ -1091,17 +1095,17 @@ class Potential(object):
     def get_gradient_general(self, q):
 
 	''' Returns gradient vector at a general grid point '''
-	
+
 	displacement_vec = q - self.getPosition()
 	gradient_general = self.getGradient() + np.dot(self.getHessian(), displacement_vec)
 
 	return gradient_general
-    
+
 
     def get_gradient_window(self, q, window_parameters):
 
 	''' Returns gradient vector at a general grid point with a Gaussian Window '''
-	
+
 	# Unzip window parameters
 	width = window_parameters[0]
 	beta_1  = window_parameters[1]
@@ -1119,7 +1123,7 @@ class Potential(object):
 				np.dot(width_matrix, displacement_vec) -\
 				4.0*delta*distance*displacement_vec)*self.getPotential(q)
 
-	gradient_window = (gradient_general + gradient_window_term)*self.getWindow(q, window_parameters)	
+	gradient_window = (gradient_general + gradient_window_term)*self.getWindow(q, window_parameters)
 
 	return gradient_window
 
@@ -1127,7 +1131,7 @@ class Potential(object):
     def get_hessian_window(self, q, window_parameters):
 
 	''' Returns hessian  at a general grid point with a Gaussian Window '''
-	
+
 	# Unzip window parameters
 	width = window_parameters[0]
 	beta_1  = window_parameters[1]
@@ -1145,7 +1149,7 @@ class Potential(object):
 	displacement_vec = q - self.getPosition()
 	distance = np.dot(displacement_vec.T, displacement_vec)
 
-	# potential, gradient, hessian (general, no window)	
+	# potential, gradient, hessian (general, no window)
 	hessian_self = self.getHessian()
 	q_potential  = self.getPotential(q)
 	grad_general = self.get_gradient_general(q)
@@ -1154,7 +1158,7 @@ class Potential(object):
 				4.0*delta*distance*displacement_vec)*q_potential
 	grad_window = (grad_general + gradient_window_term)*window_q
 
-	
+
 	# Build hessian
         for i in range(nmode):
 	    # The "Z" terms [Window first derivative terms]
@@ -1197,7 +1201,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 
     '''
     Driver function to process raw abinitio data obtained from GAUSSIAN / ORCA.
-    ''' 
+    '''
 
     # Process All Minima and TS
     object_minima = deepcopy(data_minima)
@@ -1231,7 +1235,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 		    object_minima[a] = [Molecule(natom, amass, cgeom, fcm)]
 		    current_specie = object_minima[a][0]
 
-		    # Get the matrix of atomic masses 
+		    # Get the matrix of atomic masses
 		    mass_matrix = np.diag(np.repeat(amass, 3))
 		    mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(amass), 3))
 
@@ -1292,7 +1296,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 		print
 
 		# convert hessian to new units [eV / amu * Bohr^2]
-		hessian_new = getattr(current_specie, 'hessian')*hess_fact		
+		hessian_new = getattr(current_specie, 'hessian')*hess_fact
 		setattr(current_specie, 'hessian', hessian_new)
 
 		print
@@ -1327,7 +1331,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 		    object_tstate[k] = [Molecule(natom, amass, cgeom, fcm)]
 		    current_specie_ts = object_tstate[k][0]
 
-		    # Get the matrix of atomic masses 
+		    # Get the matrix of atomic masses
 		    mass_matrix = np.diag(np.repeat(amass, 3))
 		    mass_matrix_sqrt_div = np.diag(np.repeat(1.0/np.sqrt(amass), 3))
 
@@ -1382,7 +1386,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 		setattr(current_specie_ts, 'gradient', gradient_nm)
 
 		# convert hessian to new units [eV / amu * Bohr^2]
-		hessian_new = getattr(current_specie_ts, 'hessian')*hess_fact		
+		hessian_new = getattr(current_specie_ts, 'hessian')*hess_fact
 		setattr(current_specie_ts, 'hessian', hessian_new)
 
 		print
@@ -1406,7 +1410,7 @@ def driver_process_abinitio_data(quantum_chemistry, data_minima, data_tstate):
 		all_E.append(getattr(object_tstate[k][0], 'energy'))
 	    else:
 		pass
-    
+
     min_E = np.min(all_E)
     for a in range(nel):
 	for b in range(nel):
@@ -1446,7 +1450,7 @@ def driver_process_coordinate_transformation(dic_minima, dic_tstate, reference_s
     # Create new dictionaries for Potential objects
     ab_initio_minima = deepcopy(dic_minima)
     ab_initio_tstate = deepcopy(dic_tstate)
-    
+
     # Separate out reference state first
     if reference_state[0] == 'TS':
 	ref_specie = dic_tstate[reference_state[1]][reference_state[2]]
@@ -1454,7 +1458,7 @@ def driver_process_coordinate_transformation(dic_minima, dic_tstate, reference_s
 	ref_specie = dic_minima[reference_state[1]][0]
     else:
 	pass
-    
+
     ref_cart = getattr(ref_specie, 'eq_geom_cart')
 
     # Loop over all species, process transformation
@@ -1500,7 +1504,7 @@ def driver_process_coordinate_transformation(dic_minima, dic_tstate, reference_s
 
 	    elif a != b and a > b:
 		k = (nel*(nel)/2) - (nel-a)*((nel-a))/2 + b - a - 1	# TS Locate
-		
+
 		# Coordinate Transformation
 		target_cart = getattr(dic_tstate[k][0], 'eq_geom_cart')
 		eckart_rotation, b_matrix = eckart_rotation_general(natom, amass, target_cart, ref_cart)
@@ -1515,7 +1519,7 @@ def driver_process_coordinate_transformation(dic_minima, dic_tstate, reference_s
 		# Create new dictionary object
 		current_ts_pot_object    = Potential(qnew, Enew, gnew, Hnew)
 		ab_initio_tstate[k][0] = deepcopy(current_ts_pot_object)
-		
+
 
     return ab_initio_minima, ab_initio_tstate
 
@@ -1536,7 +1540,7 @@ def get_width_matrix(window_parameters):
 	width_matrix = np.diagflat([1.0*width]*nmode)
     else:
 	if not scale_window:
-	    width_matrix = np.diagflat([1.0*width]*nmode)	
+	    width_matrix = np.diagflat([1.0*width]*nmode)
 	else:
 	    width_matrix = np.zeros((nmode, nmode))
 	    for i in range(nmode):

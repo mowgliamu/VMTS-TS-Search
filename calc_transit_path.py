@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/env python
+"""
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 import re
 import os
@@ -41,7 +45,7 @@ def quadratic_transit_path(s, q_a, q_b, q_ts):
     q_0 = q_ts
     q_1 = (q_b - q_a)/2.0
     q_2 = q_a + q_b - 2.0*q_ts
-    
+
     return q_0 + s*q_1 + 0.5*(s**2.0)*q_2
 
 
@@ -104,7 +108,7 @@ def process_grid_point(cycle, s, param_list, q_a, q_b, q_ts, eigvec, path_type):
 	current_geometry[2] = str(x_current[i, 1])
 	current_geometry[3] = str(x_current[i, 2])
 	h[i+6] = "  ".join(current_geometry)+"\n"
-    
+
     hwrite = open('grid_'+str(cycle)+'.com', 'w')
     hwrite.writelines(h)
     hwrite.close()
@@ -114,7 +118,7 @@ def process_grid_point(cycle, s, param_list, q_a, q_b, q_ts, eigvec, path_type):
     write_joball = open('joball_'+str(cycle), 'w')
     write_joball.write('g09 grid_'+str(cycle)+'.com'+'\n')
     write_joball.close()
-    check_call('cp submit temp', shell=True)	
+    check_call('cp submit temp', shell=True)
     with open('temp', "r") as fin:
 	with open('submit_'+str(cycle), "w") as fout:
 	    for line in fin:
@@ -156,7 +160,7 @@ def driver_process_all_grid(s_grid, param_list, path_params, outfile_name, path_
 	eck, B = eckart_rotation_general(natom, amass, geom, X_reference)
 	geom = np.dot(eck, geom.T).T
 
-	# Store data 
+	# Store data
 	all_energies[i]     = ener
 	all_gradients[i,:]  = grad
 	all_gradnorms[i]    = np.linalg.norm(grad)
@@ -232,7 +236,7 @@ if (__name__ == '__main__'):
 
     # Parameter List!
     param_list = [natom, amass, nmode, X_reference, reference_frequencies, ref_L_mat]
-    
+
     #sys.exit()
 
     # ========================================
@@ -271,7 +275,7 @@ if (__name__ == '__main__'):
 
     # Process Quadratic Data
     all_id = []
-    
+
     # Submit jobs and collect jobid
     for i in range(igrid):
     	jobid = process_grid_point(i, s_grid[i], param_list, Q_A, Q_B, Q_TS, rc_eigvec, 'quadratic')
@@ -297,7 +301,7 @@ if (__name__ == '__main__'):
 
     # Process Cubic Data
     all_id = []
-    
+
     # Submit jobs and collect jobid
     for i in range(igrid):
     	jobid = process_grid_point(i, s_grid[i], param_list, Q_A, Q_B, Q_TS, rc_eigvec, 'cubic')

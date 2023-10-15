@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 #!usr/bin/env python
-
-# A script to drive calculation for ts search using VIBRON.
+"""
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 import re
 import os
@@ -36,19 +38,19 @@ def read_log_gaussian(filename):
     while line != '':
 
 	if 'SCF Done:' in line:
-	    E0 = float(line.split()[4]) 
-	
+	    E0 = float(line.split()[4])
+
 	# Do NOT read the ZPE from the "E(ZPE)=" line, as this is the scaled version!
 	# We will read in the unscaled ZPE and later multiply the scaling factor
 	# from the input file
 
 	elif 'Zero-point correction=' in line:
-	    ZPE = float(line.split()[2]) 
+	    ZPE = float(line.split()[2])
 	elif '\\ZeroPoint=' in line:
 	    line = line.strip() + f.readline().strip()
 	    start = line.find('\\ZeroPoint=') + 11
 	    end = line.find('\\', start)
-	    ZPE = float(line[start:end]) 
+	    ZPE = float(line[start:end])
 	else:
 	    pass
 
@@ -57,7 +59,7 @@ def read_log_gaussian(filename):
 
     # Close file when finished
     f.close()
-    
+
     if E0 is not None:
 	if ZPE is not None:
 	    return E0, ZPE
@@ -196,12 +198,12 @@ def read_vibronic_model_hessian(filename):
 	    coord_index = f.index(line)
 	else:
 	    pass
-    
+
     nmode = int(f[coord_index+1].strip().split()[0])
     q_ts_current = np.zeros(nmode)
     for i in range(nmode):
 	q_ts_current[i] = float(f[i+2+coord_index].strip().split()[0])
-	
+
     # ================================
     # Read Hessian from Vibron_TS_info
     # ================================
@@ -212,7 +214,7 @@ def read_vibronic_model_hessian(filename):
 	    hess_index = f.index(line)
 	else:
 	    pass
-	    
+
     hess_cols = int(f[hess_index+1].strip().split()[2])
     hess_blocks = nmode / hess_cols
 
@@ -223,9 +225,9 @@ def read_vibronic_model_hessian(filename):
 	    hessian[i,:][m:m+4] = np.array([float(k) for k in f[i+start_index].strip().split()])
 	m = m + 4
 	start_index = start_index + nmode + 1
-    
+
     # Also read normal modes and frequencies from transform_cartesian_normal
-    g = open('transform_cartesian_normal').readlines() 
+    g = open('transform_cartesian_normal').readlines()
     natom = int(g[0].strip().split()[0])
     amass = np.array([float(k) for k in g[1].strip().split()])
 
@@ -236,10 +238,10 @@ def read_vibronic_model_hessian(filename):
 	    ref_modes_index = g.index(line)
 	else:
 	    pass
-	    
-    L_ref_mat = np.zeros((3*natom, nmode))  
+
+    L_ref_mat = np.zeros((3*natom, nmode))
     for i in range(3*natom):
-	L_ref_mat[i:,] = np.array([float(k) for k in g[i+1+ref_modes_index].strip().split()]) 
+	L_ref_mat[i:,] = np.array([float(k) for k in g[i+1+ref_modes_index].strip().split()])
 
 
     # Reference Frequencies
@@ -248,9 +250,9 @@ def read_vibronic_model_hessian(filename):
 	    ref_freq_index = g.index(line)
 	else:
 	    pass
-	    
-    ref_freq = np.zeros(nmode)  
-    ref_freq = np.array([float(k) for k in g[1+ref_freq_index].strip().split()]) 
+
+    ref_freq = np.zeros(nmode)
+    ref_freq = np.array([float(k) for k in g[1+ref_freq_index].strip().split()])
 
     return hessian, L_ref_mat
 
@@ -287,11 +289,11 @@ def read_irc_fchk_gaussian(filename):
     lines_energy = all_lines[all_irc_index[4]+1:all_irc_index[5]]
     for line in lines_energy:
 	foo_temp = foo_temp + ''.join(line.strip()+' ')
-    
+
     foo_temp = foo_temp.split()
     all_energies = np.array([float(i) for i in foo_temp][::2])
     all_energies = all_energies - np.amin(all_energies)
-    
+
     all_grad_norm = np.array([float(i) for i in foo_temp][1::2])
 
     # Number of IRC points

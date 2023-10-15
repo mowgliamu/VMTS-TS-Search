@@ -1,14 +1,15 @@
-
-# -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
-# x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-ACES-INTERFACE-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-x-
-# -.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-.-
-
+# -*- coding: utf-8 -*-
+#!usr/bin/env python
+"""
+Autthor: Prateek Goel
+E-mail: p2goel@uwaterloo.ca
+"""
 
 def read_eq_geom_aces(filename):
 
     '''
     General function to read the "eq_geom" file produced
-    by ACES calculation (with fcm keyword). 
+    by ACES calculation (with fcm keyword).
 
     The following data are read:
 
@@ -18,10 +19,10 @@ def read_eq_geom_aces(filename):
 
     Pattern:
     - Line #2: Number of atoms
-    - Line #4: Atomic masses 
+    - Line #4: Atomic masses
     - Line #6 onwards: Cartesian coordinates (order follows from atomic masses)
     '''
-    
+
     # Read file
     try:
 	with open(filename) as f:
@@ -29,11 +30,11 @@ def read_eq_geom_aces(filename):
     except EnvironmentError:
 	print 'Something not right with EQ_GEOM file.'
 	print 'IOError / OSError / WindowsError. Check. Fix. Rerun.'
-    
+
 
     # Process data (Each line is a string in the list, strip and split are game)
     natom = int(get_all_lines_list[1].strip().split()[0])
-    amass = np.array([float(item) for item in get_all_lines_list[3].strip().split()]) 
+    amass = np.array([float(item) for item in get_all_lines_list[3].strip().split()])
 
     # Little more work for cartesian geometry
     cgeom = np.zeros((natom, 3))
@@ -58,7 +59,7 @@ def read_normal_fdif_aces(filename, natom):
     4. mtype: a list of characters 'r' or 'i' indicating whether a normal mode is real or imaginary
 
     '''
-    
+
     nmode = 3*natom - 3
 
     # Read file
@@ -69,16 +70,16 @@ def read_normal_fdif_aces(filename, natom):
 	print 'Something not right with NORMAL_FDIF file.'
 	print 'IOError / OSError / WindowsError. Check. Fix. Rerun.'
 
-    
+
     #Initialize
     mtype = ['']*nmode
     irreps = ['']*nmode
     freq   = np.zeros(nmode)
     xnormal = np.zeros((3*natom, nmode))
-    
+
     #1. First loop for frequencies and irreps (i+natom)
     for i in range(nmode):
-	irreps[i] = get_all_lines_list[i*(1+natom)].strip().split()[0] 
+	irreps[i] = get_all_lines_list[i*(1+natom)].strip().split()[0]
 	mtype[i]  = get_all_lines_list[i*(1+natom)].strip().split()[3]
 	freq[i] = float(get_all_lines_list[i*(1+natom)].strip().split()[2])
 
@@ -86,7 +87,7 @@ def read_normal_fdif_aces(filename, natom):
     k=1
     for i in range(nmode):
 	m=0
-	for j in range(natom):	
+	for j in range(natom):
 	    temp = get_all_lines_list[k+j].strip().split()
 	    for l in range(3):
 		xnormal[m][i] = float(temp[l+1])
